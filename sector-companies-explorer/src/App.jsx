@@ -6,14 +6,20 @@ import { SectorSelect } from './components/SectorSelect.jsx'
 import { SearchBar } from './components/SearchBar.jsx'
 import { CompanyGrid } from './components/CompanyGrid.jsx'
 import { getSectors, getCompanies } from './data'
+import { getCompanySizeMeta } from './data/companySize.js'
 import { exportCsv } from './utils/exportCsv.js'
 import { Moon, Sun } from 'lucide-react'
 
-export default function App() {
-  const sectors = getSectors()
-  const all = getCompanies()
+const ALL_SECTORS = 'All Sectors'
 
-  const [sector, setSector] = useState(sectors[0])
+export default function App() {
+  const sectors = [ALL_SECTORS, ...getSectors()]
+  const all = getCompanies()
+  const sizeMeta = useMemo(() => {
+    return new Map(all.map((company, index) => [company.name, getCompanySizeMeta(company, index)]))
+  }, [all])
+
+  const [sector, setSector] = useState(ALL_SECTORS)
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [remoteOnly, setRemoteOnly] = useState(false)
@@ -47,8 +53,8 @@ export default function App() {
   }
 
   const filtered = useMemo(() => {
-    return all
-      .filter(c => c.sector === sector)
+    const base = all
+      .filter(c => (sector === ALL_SECTORS ? true : c.sector === sector))
       .filter(c => (remoteOnly ? c.remote : true))
       .filter(c => {
         if (!debouncedQuery) return true
@@ -65,15 +71,27 @@ export default function App() {
         const text = `${c.name} ${c.tags?.join(' ')}`.toLowerCase()
         return keywords.some(k => text.includes(k))
       })
-  }, [all, sector, debouncedQuery, remoteOnly, softwareOnly])
+
+    const annotated = base.map(company => {
+      const meta = sizeMeta.get(company.name)
+      return meta ? { ...company, sizeMeta: meta } : company
+    })
+
+    if (sector === ALL_SECTORS) {
+      return annotated.slice().sort((a, b) => {
+        const scoreDiff = (b.sizeMeta?.score ?? 0) - (a.sizeMeta?.score ?? 0)
+        if (scoreDiff !== 0) return scoreDiff
+        return a.name.localeCompare(b.name)
+      })
+    }
+
+    return annotated
+  }, [all, sector, debouncedQuery, remoteOnly, softwareOnly, sizeMeta])
 
   const handleExport = () => exportCsv(filtered)
 
   return (
-  <div className={`min-h-screen transition-colors duration-300 ${theme === 'dark' ? 'bg-[hsl(var(--background))]' : 'bg-gradient-to-b from-zinc-50 to-white'}`}>
-      {/* Subtle top gradient accent */}
-      <div className={`pointer-events-none fixed inset-x-0 top-0 h-32 bg-gradient-to-b ${theme === 'dark' ? 'from-white/5 to-transparent' : 'from-black/5 to-transparent'}`} />
-
+  <div className={`min-h-screen transition-colors duration-300 bg-[hsl(var(--background))]`}>
       <Header />
 
       <main className="container max-w-7xl px-4 py-8 md:py-12">
@@ -143,15 +161,15 @@ export default function App() {
           {/* Status row */}
           <div className="flex flex-wrap items-center justify-between gap-3 border-t px-4 py-3 text-sm text-[hsl(var(--muted-foreground))]">
             <p>
-              Showing <span className="font-semibold text-[hsl(var(--foreground))]">{filtered.length}</span> companies in{" "}
-              <span className="font-medium text-[hsl(var(--foreground))]">{sector}</span>
-              {remoteOnly ? <span> with remote roles</span> : null}.
+              Displaying <span className="font-semibold text-[hsl(var(--foreground))]">{filtered.length}</span> companies
+              {sector === ALL_SECTORS ? (
+                <span> across all sectors</span>
+              ) : (
+                <> in <span className="font-medium text-[hsl(var(--foreground))]">{sector}</span></>
+              )}
+              {remoteOnly ? <span> · remote friendly</span> : null}
+              {softwareOnly ? <span> · software roles</span> : null}
             </p>
-            {debouncedQuery && (
-              <p className="truncate">
-                Search for <span className="rounded-xl bg-[hsl(var(--muted))] px-2 py-0.5 font-medium text-[hsl(var(--foreground))]">“{debouncedQuery}”</span>
-              </p>
-            )}
           </div>
         </section>
 

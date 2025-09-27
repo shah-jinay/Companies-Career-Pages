@@ -37,9 +37,17 @@ export function CompanyGrid({ items, softwareOnly = false, roleQuery = 'software
 
           <div className="relative">
             <div className="flex items-start justify-between gap-3 mb-4">
-              <h3 className="font-bold text-xl leading-tight text-[hsl(var(--foreground))] group-hover:text-[hsl(var(--primary))] transition-colors duration-200">
-                {c.name}
-              </h3>
+              <div>
+                <h3 className="font-bold text-xl leading-tight text-[hsl(var(--foreground))] group-hover:text-[hsl(var(--primary))] transition-colors duration-200">
+                  {c.name}
+                </h3>
+                {c.sizeMeta?.label && (
+                  <span className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-orange-200/70 bg-orange-100/60 px-3 py-1 text-xs font-medium text-orange-700 dark:border-orange-900/40 dark:bg-orange-900/10 dark:text-orange-300">
+                    <Building2 size={12} />
+                    {c.sizeMeta.label}
+                  </span>
+                )}
+              </div>
               <div className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border ${
                 c.remote
                   ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800'

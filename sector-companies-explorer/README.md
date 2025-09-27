@@ -200,6 +200,19 @@ If you still see plain HTML:
 
 ---
 
+## 🌐 Deploying to GitHub Pages
+
+This repo is pre-configured with a **GitHub Actions** workflow and Vite base path so the site can be published at `https://<username>.github.io/<repository>/`.
+
+1. Push your project to GitHub.
+2. Open **Settings → Pages** and set the source to **GitHub Actions** (no branch selection needed).
+3. The included workflow (`.github/workflows/deploy.yml`) builds the app and deploys the `dist/` folder whenever you push to `main`.
+4. Your site will be available a minute or two after the workflow succeeds.
+
+> If you rename the repository, Vite automatically reads the GitHub repository name at build time to keep the correct base path.
+
+---
+
 ## 🛠️ Scripts
 
 ```jsonc
